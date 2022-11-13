@@ -3,53 +3,73 @@ import time
 
 class Controller:
     def __init__(self, matrix, interval):
+        """Controller of the matrix of cells.
+
+        Args:
+            matrix (matrix.Matrix): matrix of cells.
+            interval (int): time between two generations.
+
+        """
         self._matrix = matrix
         self._interval = interval
         self._is_running = False
-        self._cursor_coords = None
+        self._selected_cell = None
 
     @property
     def interval(self):
+        """int: time between two generations."""
         return self._interval
 
     @interval.setter
     def interval(self, value):
+        """int: time between two generations."""
         self._interval = value
 
     @property
-    def cursor_coords(self):
-        return self._cursor_coords
+    def selected_cell(self):
+        """tuple[int]: cursor coordinates in the cells' matrix."""
+        return self._selected_cell
 
-    @cursor_coords.setter
-    def cursor_coords(self, value):
-        self._cursor_coords = value
+    @selected_cell.setter
+    def selected_cell(self, value):
+        """tuple[int]: cursor coordinates in the cells' matrix."""
+        self._selected_cell = value
 
     @property
     def is_running(self):
+        """bool: whether the game is running."""
         return self._is_running
 
     @is_running.setter
     def is_running(self, value):
+        """bool: whether the game is running."""
         self._is_running = value
 
     @property
     def cells(self):
+        """np.ndarray: Matrix of cells of shape (m, n)."""
         return self._matrix.cells
 
     @property
     def shape(self):
+        """tuple(int): Matrix of cells numbers of rows and columns."""
         return self._matrix.nb_rows, self._matrix.nb_cols
 
     def run(self):
+        """Runs the game."""
         while True:
             self.step_run()
             time.sleep(self._interval)
 
     def step_run(self):
+        """Atomic step of the game.
+        If the game is running, then the matrix of cells is updated to the next generations.
+        If the game is stopped and a cell is selected, then this cell's state is changed.
+        """
         if self._is_running:
             self._matrix.update()
 
-        elif self._cursor_coords is not None:
-            x, y = self._cursor_coords
+        elif self._selected_cell is not None:
+            x, y = self._selected_cell
             self._matrix.change_cell(y, x)
-            self._cursor_coords = None
+            self._selected_cell = None
