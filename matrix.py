@@ -31,6 +31,16 @@ class Matrix:
         self.iteration = 0
         self._params = params
 
+    def change_cell(self, x, y):
+        """Change cell state. It becomes dead if it was alive and the other way around.
+
+        Args:
+            x (int): cell row id.
+            y (int): cell column id.q
+
+        """
+        self.cells[x][y] = not self.cells[x][y]
+
     def update(self):
         """Updates the cells' matrix according to Conway's Game of Life laws.
 
