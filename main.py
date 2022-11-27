@@ -6,20 +6,16 @@
         3. Any other live cell dies in the next generation. Similarly, any other dead cell stays dead.
 """
 
-from matplotlib import pyplot as plt
 from matplotlib import animation
 import matrix
 import game_controller
-
-# TODO separate control and view.
-#  For now, this file is responsible for both the view and the control of the game.
-#  A more desired design would enable us to:
-#       - run the game without the view.
-#       - plug different views without much effort. It is not the case here.
-#       - modify the view without changing the game control.
+from matplotlib.backends.qt_compat import QtWidgets
+from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
+from matplotlib.figure import Figure
+import sys
 
 
-class GameUI:
+class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self, controller, show_grid=True, grid_line_width=0.3, lines_color="black"):
         """Controls and shows the game.
 
@@ -33,6 +29,18 @@ class GameUI:
             Allowed colors are listed here: https://matplotlib.org/stable/gallery/color/named_colors.html
 
         """
+        super().__init__()
+        self._main = QtWidgets.QWidget()
+        self.setCentralWidget(self._main)
+        layout = QtWidgets.QVBoxLayout(self._main)
+
+        self._fig = Figure(figsize=(5, 3))
+        self._canvas = FigureCanvas(self._fig)
+        layout.addWidget(self._canvas)
+        layout.addWidget(NavigationToolbar2QT(self._canvas, self))
+
+        self._axis = self._canvas.figure.subplots()
+
         self._controller = controller
         self._nb_rows, self._nb_cols = self._controller.shape
         self._grid_line_width = grid_line_width
@@ -50,27 +58,25 @@ class GameUI:
             matrix (matrix.Matrix): matrix of cells.
 
         """
-        fig = plt.figure()
-        fig.canvas.mpl_connect('button_press_event', self._onclick)
-        self._image = plt.imshow(self._controller.cells, cmap='gist_gray_r', vmin=0, vmax=1)
-        _ = animation.FuncAnimation(
-            fig,
+        self._canvas.mpl_connect('button_press_event', self._onclick)
+        self._image = self._axis.imshow(self._controller.cells, cmap='gist_gray_r', vmin=0, vmax=1)
+        self.animation = animation.FuncAnimation(
+            self._fig,
             func=self._animate,
             frames=self._nb_rows * self._nb_cols,
             interval=self._controller.interval
         )
-        plt.xticks([])
-        plt.yticks([])
+        self._axis.set_xticks([])
+        self._axis.set_yticks([])
 
         if self._show_grid:
             shift = self._grid_shift
             color = self._lines_color
             width = self._grid_line_width
             for i in range(self._nb_rows):
-                plt.hlines(y=i - shift, xmin=-shift, xmax=self._nb_cols - shift, color=color, linewidth=width)
+                self._axis.hlines(y=i - shift, xmin=-shift, xmax=self._nb_cols - shift, color=color, linewidth=width)
             for i in range(self._nb_cols):
-                plt.vlines(x=i - shift, ymin=-shift, ymax=self._nb_rows - shift, color=color, linewidth=width)
-        plt.show()
+                self._axis.vlines(x=i - shift, ymin=-shift, ymax=self._nb_rows - shift, color=color, linewidth=width)
 
     def _animate(self, _):
         """Updates the view."""
@@ -103,4 +109,12 @@ if __name__ == '__main__':
         init_live_pct=0.10
     )
     controller = game_controller.Controller(my_matrix, interval=50)
-    GameUI(controller)
+    qapp = QtWidgets.QApplication.instance()
+    if not qapp:
+        qapp = QtWidgets.QApplication(sys.argv)
+
+    app = ApplicationWindow(controller)
+    app.show()
+    app.activateWindow()
+    app.raise_()
+    qapp.exec()
