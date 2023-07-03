@@ -1,4 +1,7 @@
 import numpy as np
+import pathlib
+
+data_folder = "./data/"
 
 
 class Matrix:
@@ -30,6 +33,14 @@ class Matrix:
         )
         self.iteration = 0
         self._params = params
+
+    @classmethod
+    def from_filename(cls, params, nb_rows, nb_cols, filename):
+        matrix = cls(params, nb_rows, nb_cols, 0)
+        path = pathlib.Path(data_folder) / filename
+        with open(path, "rb") as file_handler:
+            matrix.cells = np.load(file_handler)
+        return matrix
 
     def change_cell(self, x, y):
         """Change cell state. It becomes dead if it was alive and the other way around.
@@ -104,6 +115,14 @@ class Matrix:
 
         return neighbors
 
+    def save(self, filename):
+        path = pathlib.Path(data_folder)
+        if not path.exists():
+            path.mkdir()
+        path = path / filename
+        with open(path, "wb") as file_handler:
+            np.save(file_handler, self.cells)
+
 
 if __name__ == '__main__':
     import profile_tools
@@ -114,3 +133,4 @@ if __name__ == '__main__':
         init_live_pct=0.50
     )
     profile_tools.profile(matrix.update)
+    matrix.save(filename="test.npy")

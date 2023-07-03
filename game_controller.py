@@ -73,3 +73,8 @@ class Controller:
             x, y = self._selected_cell
             self._matrix.change_cell(y, x)
             self._selected_cell = None
+
+    def save_matrix(self):
+        timestamp = time.time()
+        name = str(timestamp)
+        self._matrix.save(name + ".npy")

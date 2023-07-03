@@ -95,8 +95,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             double-middle-click anywhere: the game stops or resumes
 
         """
-        if event.dblclick and event.button == 2:
+        if event.dblclick:
             self._controller.is_running = not self._controller.is_running
+            #self._controller.save_matrix()
+
         elif event.button == 1:
             self._controller.selected_cell = int(event.xdata + self._grid_shift), int(event.ydata + self._grid_shift)
 
@@ -107,6 +109,12 @@ if __name__ == '__main__':
         nb_rows=60,
         nb_cols=100,
         init_live_pct=0.10
+    )
+    my_matrix = matrix.Matrix.from_filename(
+        params=[2, 3, 3, 3],
+        nb_rows=60,
+        nb_cols=100,
+        filename="gospers_glider_gun.npy"
     )
     controller = game_controller.Controller(my_matrix, interval=50)
     qapp = QtWidgets.QApplication.instance()
