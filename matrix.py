@@ -1,7 +1,20 @@
 import numpy as np
 import pathlib
+from io import StringIO
+
 
 data_folder = "./data/"
+
+
+def load_pattern(filename):
+    with open(filename, "r") as file_handler:
+        lines = file_handler.readlines()
+    formatted_data = "\n".join(
+        [' '.join(['1' if c == 'O' else '0' for c in line])
+         for line in lines]
+    )
+    data_stream = StringIO(formatted_data)
+    return np.loadtxt(data_stream, dtype="i", delimiter=None)
 
 
 class Matrix:
@@ -41,6 +54,11 @@ class Matrix:
         with open(path, "rb") as file_handler:
             matrix.cells = np.load(file_handler)
         return matrix
+
+    def add_pattern(self, pattern, pos):
+        x_origin, y_origin = pos
+        width, height = pattern.shape
+        self.cells[x_origin: x_origin + width, y_origin: y_origin + height] = pattern
 
     def change_cell(self, x, y):
         """Change cell state. It becomes dead if it was alive and the other way around.
@@ -130,7 +148,7 @@ if __name__ == '__main__':
         params=[2, 3, 3, 3],
         nb_rows=100,
         nb_cols=100,
-        init_live_pct=0.50
+        init_live_pct=0.15
     )
     profile_tools.profile(matrix.update)
     matrix.save(filename="test.npy")

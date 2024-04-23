@@ -108,20 +108,16 @@ if __name__ == '__main__':
         params=[2, 3, 3, 3],
         nb_rows=60,
         nb_cols=100,
-        init_live_pct=0.10
+        init_live_pct=0
     )
-    my_matrix = matrix.Matrix.from_filename(
-        params=[2, 3, 3, 3],
-        nb_rows=60,
-        nb_cols=100,
-        filename="gospers_glider_gun.npy"
-    )
+    pattern = matrix.load_pattern(filename="data/gospers_gilder_gun.txt")
+    my_matrix.add_pattern(pattern, pos=(10, 10))
     controller = game_controller.Controller(my_matrix, interval=50)
     qapp = QtWidgets.QApplication.instance()
     if not qapp:
         qapp = QtWidgets.QApplication(sys.argv)
 
-    app = ApplicationWindow(controller)
+    app = ApplicationWindow(controller, lines_color="black")
     app.show()
     app.activateWindow()
     app.raise_()
