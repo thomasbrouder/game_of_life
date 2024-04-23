@@ -13,6 +13,7 @@ from matplotlib.backends.qt_compat import QtWidgets
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import sys
+import glob
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -32,15 +33,42 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         super().__init__()
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
-        layout = QtWidgets.QVBoxLayout(self._main)
 
+        # Create a horizontal layout to include both the plot and buttons
+        main_layout = QtWidgets.QHBoxLayout(self._main)
+
+        # Create a layout for buttons, combo boxes, and add some buttons
+        control_layout = QtWidgets.QVBoxLayout()
+
+        files = glob.glob("data/patterns/*.txt")
+        self.filenames = {
+            file.split("/")[-1].split(".")[0].replace("_", " "): file for file in files
+        }
+        self.nameComboBox = QtWidgets.QComboBox()
+        pattern_names = list(self.filenames.keys())
+        self.nameComboBox.addItems(pattern_names)
+        self._selected_pattern = pattern_names[0]
+        self.nameComboBox.currentIndexChanged.connect(self.on_name_selected)  # Connect to a slot
+        control_layout.addWidget(self.nameComboBox)
+
+        # Add buttons
+        self.play_button = QtWidgets.QPushButton('Play/Pause')
+        self.add_pattern_button = QtWidgets.QPushButton('Add pattern')
+        control_layout.addWidget(self.play_button)
+        control_layout.addWidget(self.add_pattern_button)
+        self.play_button.clicked.connect(self.play_clicked_action)
+        self.add_pattern_button.clicked.connect(self.add_pattern_action)
+        control_layout.addStretch()  # This ensures the controls are top aligned
+
+        plot_layout = QtWidgets.QVBoxLayout(self._main)
         self._fig = Figure(figsize=(5, 3))
         self._canvas = FigureCanvas(self._fig)
-        layout.addWidget(self._canvas)
-        layout.addWidget(NavigationToolbar2QT(self._canvas, self))
+        plot_layout.addWidget(self._canvas)
+        plot_layout.addWidget(NavigationToolbar2QT(self._canvas, self))
 
         self._axis = self._canvas.figure.subplots()
 
+        self._add_pattern_mode = False
         self._controller = controller
         self._nb_rows, self._nb_cols = self._controller.shape
         self._grid_line_width = grid_line_width
@@ -49,7 +77,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._grid_shift = 0.5  # Used to counterbalance the fact that grid cells are centered on their coordinates.
         self._show_grid = show_grid
         self._image = None
+
+        main_layout.addLayout(control_layout)
+        main_layout.addLayout(plot_layout)
+
         self._run()
+
+    def play_clicked_action(self):
+        self._controller.is_running = not self._controller.is_running
+
+    def add_pattern_action(self):
+        self._add_pattern_mode = not self._add_pattern_mode
+
+    def on_name_selected(self, index):
+        self._selected_pattern = self.nameComboBox.currentText()
+        print("self._selected_pattern: ", self._selected_pattern)
 
     def _run(self):
         """Runs and displays the cells' matrix generation after generation.
@@ -102,6 +144,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         elif event.button == 1:
             self._controller.selected_cell = int(event.xdata + self._grid_shift), int(event.ydata + self._grid_shift)
 
+            if self._add_pattern_mode:
+                filename = self.filenames.get(self._selected_pattern)
+                pattern = matrix.load_pattern(filename)
+                x, y = self._controller.selected_cell
+                self._controller._matrix.add_pattern(pattern, pos=(y, x))
+
 
 if __name__ == '__main__':
     my_matrix = matrix.Matrix(
@@ -110,8 +158,7 @@ if __name__ == '__main__':
         nb_cols=100,
         init_live_pct=0
     )
-    pattern = matrix.load_pattern(filename="data/gospers_gilder_gun.txt")
-    my_matrix.add_pattern(pattern, pos=(10, 10))
+
     controller = game_controller.Controller(my_matrix, interval=50)
     qapp = QtWidgets.QApplication.instance()
     if not qapp:

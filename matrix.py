@@ -56,6 +56,7 @@ class Matrix:
         return matrix
 
     def add_pattern(self, pattern, pos):
+        # TODO Handle case out of bounds
         x_origin, y_origin = pos
         width, height = pattern.shape
         self.cells[x_origin: x_origin + width, y_origin: y_origin + height] = pattern
