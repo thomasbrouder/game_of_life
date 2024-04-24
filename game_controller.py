@@ -59,7 +59,6 @@ class Controller:
         """Runs the game."""
         while True:
             self.step_run()
-            time.sleep(self._interval)
 
     def step_run(self):
         """Atomic step of the game.

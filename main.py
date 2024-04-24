@@ -60,9 +60,19 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.add_pattern_button.clicked.connect(self.add_pattern_action)
         control_layout.addStretch()  # This ensures the controls are top aligned
 
+        self.inputField = QtWidgets.QLineEdit()
+        control_layout.addWidget(self.inputField)
+        self.inputField.setPlaceholderText('Enter your value here')
+        self.inputField.returnPressed.connect(self.on_input_entered)
+
         plot_layout = QtWidgets.QVBoxLayout(self._main)
+
         self._fig = Figure(figsize=(5, 3))
         self._canvas = FigureCanvas(self._fig)
+
+        # Adjust layout to reduce spacing and padding
+        self._fig.subplots_adjust(left=0, right=1, top=1, bottom=0)  # Adjust these values as needed
+
         plot_layout.addWidget(self._canvas)
         plot_layout.addWidget(NavigationToolbar2QT(self._canvas, self))
 
@@ -78,10 +88,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._show_grid = show_grid
         self._image = None
 
-        main_layout.addLayout(control_layout)
-        main_layout.addLayout(plot_layout)
-
+        main_layout.addLayout(control_layout, 1)
+        main_layout.addLayout(plot_layout, 6)
+        # Maximize the window
+        self.showMaximized()
         self._run()
+
+    def on_input_entered(self):
+        # TODO Make controller responsible for interval value changes
+        self._controller.interval = self.inputField.text()
+        self.animation.event_source.interval = int(self._controller.interval)
 
     def play_clicked_action(self):
         self._controller.is_running = not self._controller.is_running
@@ -91,7 +107,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def on_name_selected(self, index):
         self._selected_pattern = self.nameComboBox.currentText()
-        print("self._selected_pattern: ", self._selected_pattern)
 
     def _run(self):
         """Runs and displays the cells' matrix generation after generation.
@@ -108,6 +123,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             frames=self._nb_rows * self._nb_cols,
             interval=self._controller.interval
         )
+
         self._axis.set_xticks([])
         self._axis.set_yticks([])
 
@@ -142,24 +158,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             #self._controller.save_matrix()
 
         elif event.button == 1:
-            self._controller.selected_cell = int(event.xdata + self._grid_shift), int(event.ydata + self._grid_shift)
-
+            selected_cell = int(event.xdata + self._grid_shift), int(
+                    event.ydata + self._grid_shift)
             if self._add_pattern_mode:
                 filename = self.filenames.get(self._selected_pattern)
                 pattern = matrix.load_pattern(filename)
-                x, y = self._controller.selected_cell
+                x, y = selected_cell
                 self._controller._matrix.add_pattern(pattern, pos=(y, x))
+            else:
+                self._controller.selected_cell = selected_cell
 
 
 if __name__ == '__main__':
     my_matrix = matrix.Matrix(
         params=[2, 3, 3, 3],
-        nb_rows=60,
-        nb_cols=100,
+        nb_rows=400,
+        nb_cols=700,
         init_live_pct=0
     )
 
-    controller = game_controller.Controller(my_matrix, interval=50)
+    controller = game_controller.Controller(my_matrix, interval=0)
     qapp = QtWidgets.QApplication.instance()
     if not qapp:
         qapp = QtWidgets.QApplication(sys.argv)
