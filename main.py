@@ -14,7 +14,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import sys
 import glob
-
+from matplotlib.colors import ListedColormap
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self, controller, show_grid=True, grid_line_width=0.3, lines_color="black"):
@@ -116,7 +116,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         """
         self._canvas.mpl_connect('button_press_event', self._onclick)
-        self._image = self._axis.imshow(self._controller.cells, cmap='gist_gray_r', vmin=0, vmax=1)
+
+        custom_cmap = ListedColormap(['black', 'white'])
+        self._image = self._axis.imshow(self._controller.cells, cmap=custom_cmap, vmin=0, vmax=1)
         self.animation = animation.FuncAnimation(
             self._fig,
             func=self._animate,
