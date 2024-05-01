@@ -5,6 +5,7 @@ logging.basicConfig(format='%(asctime)s %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
 
+
 class Controller:
     def __init__(self, matrix, interval):
         """Controller of the matrix of cells.
@@ -70,9 +71,7 @@ class Controller:
         If the game is stopped and a cell is selected, then this cell's state is changed.
         """
         if self._is_running:
-            start_time = time.time()
             self._matrix.update()
-            end_time = time.time()
 
             if self._matrix.iteration % 10 == 0:
                 logger.info("Iterations: %s", self._matrix.iteration)

@@ -5,6 +5,7 @@
         2. Any dead cell with the right number of live neighbours (usually three) becomes a live cell.
         3. Any other live cell dies in the next generation. Similarly, any other dead cell stays dead.
 """
+import time
 
 from matplotlib import animation
 import matrix
@@ -15,6 +16,7 @@ from matplotlib.figure import Figure
 import sys
 import glob
 from matplotlib.colors import ListedColormap
+
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self, controller, show_grid=True, grid_line_width=0.3, lines_color="black"):

@@ -109,8 +109,10 @@ class Matrix:
         ]
 
         neighbors = np.tile(0, (self.nb_rows, self.nb_cols))
+
         for data in rows_cols_to_add:
             copy_cells = self.cells.copy()
+            start_time = time.time()
 
             if data["top"] == 1:
                 copy_cells = np.insert(copy_cells, 0, new_row, axis=0)[:-1, :]
@@ -129,7 +131,9 @@ class Matrix:
                 pass
             else:
                 raise ValueError("Number of columns to add to the left must be contained between -1 and 1.")
-
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            logger.info("elapsed_time: %s", elapsed_time)
             neighbors = neighbors + copy_cells
 
         return neighbors
@@ -144,12 +148,34 @@ class Matrix:
 
 
 if __name__ == '__main__':
-    import profile_tools
-    matrix = Matrix(
-        params=[2, 3, 3, 3],
-        nb_rows=100,
-        nb_cols=100,
-        init_live_pct=0.15
-    )
-    profile_tools.profile(matrix.update)
-    matrix.save(filename="test.npy")
+    import time
+    import logging
+
+    logging.basicConfig(format='%(asctime)s %(message)s')
+    logger = logging.getLogger(__name__)
+    logger.setLevel("INFO")
+
+    min_frequency = 10
+    dimensions = [(8000 + 100*i, 8000+100*i) for i in range(90)]
+    for nb_rows, nb_cols in dimensions:
+        matrix = Matrix(
+            params=[2, 3, 3, 3],
+            nb_rows=nb_rows,
+            nb_cols=nb_cols,
+            init_live_pct=0.15
+        )
+        start_time = time.time()
+        count = 0
+        while count < 10:
+            matrix.update()
+            count += 1
+
+        elapsed_time = time.time() - start_time
+        mean_frequency = round(count / elapsed_time, 3)
+        logger.info(
+            "Mean frequency for dimensions %s: %s Hz",
+            (nb_rows, nb_cols),
+            mean_frequency,
+        )
+        if mean_frequency < min_frequency:
+            break
