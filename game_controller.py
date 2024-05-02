@@ -72,14 +72,11 @@ class Controller:
         """
         if self._is_running:
             self._matrix.update()
-
-            if self._matrix.iteration % 10 == 0:
-                logger.info("Iterations: %s", self._matrix.iteration)
-
         elif self._selected_cell is not None:
             x, y = self._selected_cell
             self._matrix.change_cell(y, x)
             self._selected_cell = None
+        yield self._matrix.cells
 
     def save_matrix(self):
         timestamp = time.time()

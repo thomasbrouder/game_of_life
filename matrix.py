@@ -95,47 +95,21 @@ class Matrix:
         Returns:
             np.ndarray: Matrix of size (nb_rows, nb_cols) giving the sum of alive neighbors.
         """
-        new_col = np.zeros(self.nb_rows)
-        new_row = np.zeros(self.nb_cols)
         rows_cols_to_add = [
-            {"top": 1, "left": 0},
-            {"top": -1, "left": 0},
-            {"top": 0, "left": 1},
-            {"top": 0, "left": -1},
-            {"top": 1, "left": 1},
-            {"top": -1, "left": -1},
-            {"top": 1, "left": -1},
-            {"top": -1, "left": 1},
+            # top, bottom, left, right
+            (1, 0, 0, 0),
+            (0, 1, 0, 0),
+            (0, 0, 1, 0),
+            (0, 0, 0, 1),
+            (1, 0, 1, 0),
+            (1, 0, 0, 1),
+            (0, 1, 1, 0),
+            (0, 1, 0, 1),
         ]
-
         neighbors = np.tile(0, (self.nb_rows, self.nb_cols))
-
-        for data in rows_cols_to_add:
-            copy_cells = self.cells.copy()
-            start_time = time.time()
-
-            if data["top"] == 1:
-                copy_cells = np.insert(copy_cells, 0, new_row, axis=0)[:-1, :]
-            elif data["top"] == -1:
-                copy_cells = np.insert(copy_cells, self.nb_rows, new_row, axis=0)[1:, :]
-            elif data["top"] == 0:
-                pass
-            else:
-                raise ValueError("Number of rows to add on top must be contained between -1 and 1.")
-
-            if data["left"] == 1:
-                copy_cells = np.insert(copy_cells, 0, new_col, axis=1)[:, :-1]
-            elif data["left"] == -1:
-                copy_cells = np.insert(copy_cells, self.nb_cols, new_col, axis=1)[:, 1:]
-            elif data["left"] == 0:
-                pass
-            else:
-                raise ValueError("Number of columns to add to the left must be contained between -1 and 1.")
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            logger.info("elapsed_time: %s", elapsed_time)
-            neighbors = neighbors + copy_cells
-
+        copy_cells = self.cells.copy()
+        for top, bottom, left, right in rows_cols_to_add:
+            neighbors[right: self.nb_rows - left, bottom: self.nb_cols - top] += copy_cells[left: self.nb_rows - right, top: self.nb_cols - bottom]
         return neighbors
 
     def save(self, filename):
@@ -155,8 +129,8 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logger.setLevel("INFO")
 
-    min_frequency = 10
-    dimensions = [(8000 + 100*i, 8000+100*i) for i in range(90)]
+    min_frequency = 1
+    dimensions = [(10_000 + 100*i, 10_000+100*i) for i in range(90)]
     for nb_rows, nb_cols in dimensions:
         matrix = Matrix(
             params=[2, 3, 3, 3],
@@ -166,7 +140,7 @@ if __name__ == '__main__':
         )
         start_time = time.time()
         count = 0
-        while count < 10:
+        while count < 1:
             matrix.update()
             count += 1
 

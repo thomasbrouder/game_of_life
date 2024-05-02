@@ -16,6 +16,11 @@ from matplotlib.figure import Figure
 import sys
 import glob
 from matplotlib.colors import ListedColormap
+import logging
+
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -102,6 +107,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.animation.event_source.interval = int(self._controller.interval)
 
     def play_clicked_action(self):
+        self.start_time = time.time()
         self._controller.is_running = not self._controller.is_running
 
     def add_pattern_action(self):
@@ -124,8 +130,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.animation = animation.FuncAnimation(
             self._fig,
             func=self._animate,
-            frames=self._nb_rows * self._nb_cols,
-            interval=self._controller.interval
+            frames=self._controller.step_run,
+            interval=self._controller.interval,
+            cache_frame_data=False,
         )
 
         self._axis.set_xticks([])
@@ -142,7 +149,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _animate(self, _):
         """Updates the view."""
-        self._controller.step_run()
+        nb_iterations = self._controller._matrix.iteration
+        if self._controller.is_running and nb_iterations % 30 == 0:
+            elapsed_time = time.time() - self.start_time
+            logger.info("Frequency: %s", round(nb_iterations / elapsed_time, 3))
         self._image.set_data(self._controller.cells)
 
     def _onclick(self, event):
@@ -159,11 +169,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """
         if event.dblclick:
             self._controller.is_running = not self._controller.is_running
-            #self._controller.save_matrix()
 
         elif event.button == 1:
             selected_cell = int(event.xdata + self._grid_shift), int(
-                    event.ydata + self._grid_shift)
+                event.ydata + self._grid_shift)
             if self._add_pattern_mode:
                 filename = self.filenames.get(self._selected_pattern)
                 pattern = matrix.load_pattern(filename)
@@ -173,14 +182,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self._controller.selected_cell = selected_cell
 
 
-if __name__ == '__main__':
+def run():
     my_matrix = matrix.Matrix(
         params=[2, 3, 3, 3],
-        nb_rows=400,
-        nb_cols=700,
+        nb_rows=2000,
+        nb_cols=2000,
         init_live_pct=0
     )
-
     controller = game_controller.Controller(my_matrix, interval=0)
     qapp = QtWidgets.QApplication.instance()
     if not qapp:
@@ -191,3 +199,8 @@ if __name__ == '__main__':
     app.activateWindow()
     app.raise_()
     qapp.exec()
+
+
+if __name__ == '__main__':
+    import profile_tools
+    profile_tools.profile(run)

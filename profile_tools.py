@@ -18,6 +18,8 @@ def profile(function, args={}, path=None):
     if path is None:
         path = f"profile_{function.__name__}.txt"
     _write_profile_to_file(cp, path=path)
+    filename = 'profile.prof'  # You can change this if needed
+    cp.dump_stats(filename)
 
 
 def _write_profile_to_file(c_profile_object, path, time_ordered=True):
