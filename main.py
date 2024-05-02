@@ -133,6 +133,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             frames=self._controller.step_run,
             interval=self._controller.interval,
             cache_frame_data=False,
+            blit=True,
         )
 
         self._axis.set_xticks([])
@@ -154,6 +155,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             elapsed_time = time.time() - self.start_time
             logger.info("Frequency: %s", round(nb_iterations / elapsed_time, 3))
         self._image.set_data(self._controller.cells)
+        return [self._image]
 
     def _onclick(self, event):
         """Callback function to control cells' matrix state with mouse events.
@@ -185,8 +187,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 def run():
     my_matrix = matrix.Matrix(
         params=[2, 3, 3, 3],
-        nb_rows=2000,
-        nb_cols=2000,
+        nb_rows=1000,
+        nb_cols=1000,
         init_live_pct=0
     )
     controller = game_controller.Controller(my_matrix, interval=0)
