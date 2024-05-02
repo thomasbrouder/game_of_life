@@ -10,6 +10,7 @@ import time
 from matplotlib import animation
 import matrix
 import game_controller
+from PyQt6.QtCore import Qt
 from matplotlib.backends.qt_compat import QtWidgets
 from matplotlib.backends.backend_qtagg import FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
@@ -67,10 +68,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.add_pattern_button.clicked.connect(self.add_pattern_action)
         control_layout.addStretch()  # This ensures the controls are top aligned
 
-        self.inputField = QtWidgets.QLineEdit()
-        control_layout.addWidget(self.inputField)
-        self.inputField.setPlaceholderText('Enter your value here')
-        self.inputField.returnPressed.connect(self.on_input_entered)
+        self.slider = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
+        self.slider.setRange(0, 100)
+        self.slider.valueChanged.connect(self.on_input_entered)
+        control_layout.addWidget(self.slider)
+
+        self.frequency_label = QtWidgets.QLabel('', self)
+        control_layout.addWidget(self.frequency_label)
 
         plot_layout = QtWidgets.QVBoxLayout(self._main)
 
@@ -99,12 +103,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         main_layout.addLayout(plot_layout, 6)
         # Maximize the window
         self.showMaximized()
+        self.count = 0
+        self.frequency_measure_batch = 10
         self._run()
 
     def on_input_entered(self):
         # TODO Make controller responsible for interval value changes
-        self._controller.interval = self.inputField.text()
-        self.animation.event_source.interval = int(self._controller.interval)
+        self._controller.interval = self.slider.value()
 
     def play_clicked_action(self):
         self.start_time = time.time()
@@ -150,12 +155,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _animate(self, _):
         """Updates the view."""
-        nb_iterations = self._controller._matrix.iteration
-        if self._controller.is_running and nb_iterations % 30 == 0:
-            elapsed_time = time.time() - self.start_time
-            logger.info("Frequency: %s", round(nb_iterations / elapsed_time, 3))
         self._image.set_data(self._controller.cells)
+        time.sleep(int(self._controller.interval)/1000)
+        self.count += 1
+        if self._controller.is_running and self.count % self.frequency_measure_batch == 0:
+            frequency = self._compute_frequency()
+            self.frequency_label.setText(f"Frequency: {frequency}Hz")
         return [self._image]
+
+    def _compute_frequency(self):
+        elapsed_time = time.time() - self.start_time
+        frequency = round(self.frequency_measure_batch / elapsed_time)
+        logger.info("Frequency: %s", frequency)
+        self.start_time = time.time()
+        return frequency
 
     def _onclick(self, event):
         """Callback function to control cells' matrix state with mouse events.
